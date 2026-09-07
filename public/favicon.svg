@@ -1,11 +1,15 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <rect width="64" height="64" rx="14" fill="#F7F5F0"/>
-  <circle cx="32" cy="26" r="14" fill="#E8C547" stroke="#4A463C" stroke-width="2"/>
-  <path d="M27 26 L32 29 L37 26" fill="none" stroke="#4A463C" stroke-width="1.5" stroke-linecap="round"/>
-  <rect x="26" y="38" width="12" height="5" rx="1.5" fill="#787060" stroke="#4A463C" stroke-width="1.2"/>
-  <rect x="27.5" y="43" width="9" height="2.2" fill="#787060"/>
-  <rect x="27.5" y="45.5" width="9" height="2.2" fill="#787060"/>
-  <rect x="27.5" y="48" width="9" height="2.2" fill="#787060"/>
-  <rect x="29" y="50.5" width="6" height="3.5" rx="1.2" fill="#4A463C"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180" role="img" aria-label="日记">
+  <rect width="180" height="180" fill="#F7F5F0"/>
+  <!-- soft window wash -->
+  <circle cx="90" cy="80" r="58" fill="#E8C547" opacity="0.10"/>
+  <circle cx="90" cy="80" r="40" fill="#E8C547" opacity="0.14"/>
+  <!-- bulb as soft stamp (slightly imperfect ellipse) -->
+  <path fill="#E8C547" d="M90 28c22 0 40 18.5 40 42 0 16-8 28-18 36-3 2.5-5 6-5 10v4H73v-4c0-4-2-7.5-5-10C58 98 50 86 50 70c0-23.5 18-42 40-42Z"/>
+  <!-- 窗光 highlight -->
+  <ellipse cx="76" cy="58" rx="11" ry="15" fill="#F3E6A6" opacity="0.5"/>
+  <!-- soft neck -->
+  <rect x="78" y="116" width="24" height="8" rx="3" fill="#D4C07A"/>
+  <!-- one soft base pill only -->
+  <rect x="74" y="126" width="32" height="10" rx="5" fill="#C9B896"/>
+  <ellipse cx="90" cy="138" rx="7" ry="3.5" fill="#B0A090"/>
 </svg>
