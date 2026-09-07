@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#F7F5F0" />
+  <title>心情日历 · 今日</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600;700&family=IBM+Plex+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --paper: #F7F5F0;
+      --ink: #2A2A2A;
+      --muted: #8A8580;
+      --line: #D8DCE2;
+      --accent: #C5CCD4;
+      --pola: #FFFEFA;
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "IBM Plex Sans SC", "PingFang SC", "Noto Sans SC", sans-serif;
+      background-color: var(--paper);
+      background-image:
+        radial-gradient(rgba(42,42,42,0.045) 0.6px, transparent 0.7px);
+      background-size: 7px 7px;
+      -webkit-font-smoothing: antialiased;
+    }
+    ::selection { background: color-mix(in srgb, var(--accent) 28%, transparent); }
+    button, input, textarea { font: inherit; color: inherit; }
+    button { cursor: pointer; border: 0; background: none; }
+    .shell {
+      width: min(420px, 100%);
+      margin: 0 auto;
+      padding: calc(16px + var(--safe-t)) 18px calc(28px + var(--safe-b));
+    }
+
+    .meta {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .date-block { position: relative; }
+    .date-block input[type="date"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .dow {
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+    }
+    .day {
+      margin-top: 2px;
+      font-family: "Noto Serif SC", "Songti SC", serif;
+      font-size: 1.9rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+    .ym {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    .wx-mini {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 4px;
+      max-width: 168px;
+    }
+    .wx {
+      width: 34px; height: 34px;
+      display: grid; place-items: center;
+      border-radius: 11px;
+      color: var(--muted);
+      opacity: 0.72;
+      transition: .15s ease;
+    }
+    
+    .wx.is-on {
+      opacity: 1;
+      color: var(--ink);
+      background: color-mix(in srgb, var(--tone, var(--accent)) 14%, transparent);
+      box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--tone, var(--accent)) 55%, transparent);
+    }
+
+    .ask {
+      margin: 16px 2px 10px;
+      font-family: "Noto Serif SC", serif;
+      font-size: 1.02rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      line-height: 1.35;
+    }
+
+    /* Mood-calendar entry: compact 3×2 stamps (not giant hero icons) */
+    .mood-rail {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px 4px;
+      padding: 0 0 12px;
+    }
+    .mood-stamp {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 2px 7px;
+      border-radius: 14px;
+      transition: background .15s ease;
+    }
+    .mood-face {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: transparent;
+      box-shadow: none;
+      transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+    }
+    .stamp-img {
+      width: 40px;
+      height: 40px;
+      display: block;
+      object-fit: contain;
+      pointer-events: none;
+      user-select: none;
+    }
+    .wx-img {
+      width: 18px;
+      height: 18px;
+      display: block;
+      object-fit: contain;
+      pointer-events: none;
+    }
+    .mood-stamp .lbl {
+      color: var(--muted);
+      font-size: 0.68rem;
+      font-weight: 600;
+      line-height: 1.1;
+    }
+    .mood-stamp.is-on {
+      background: color-mix(in srgb, var(--tone) 10%, transparent);
+    }
+    .mood-stamp.is-on .mood-face {
+      background: color-mix(in srgb, var(--tone) 14%, #FFFEFA);
+      box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--tone) 55%, transparent);
+      transform: scale(1.05);
+    }
+    .mood-stamp.is-on .lbl { color: var(--ink); font-weight: 700; }
+
+
+    .page {
+      margin-top: 8px;
+      padding: 16px 14px 14px;
+      border-radius: 18px;
+      background: rgba(255,254,250,0.72);
+      border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+    }
+    .page-label {
+      margin: 0 0 10px;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 650;
+      letter-spacing: 0.06em;
+    }
+    .note {
+      width: 100%;
+      min-height: 120px;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      resize: none;
+      font-size: 1rem;
+      line-height: 1.7;
+      caret-color: color-mix(in srgb, var(--accent) 65%, #2A2A2A);
+    }
+    .note:focus { outline: none; }
+    .note::placeholder { color: color-mix(in srgb, var(--muted) 70%, transparent); }
+
+    .media { margin-top: 22px; }
+    .media-title {
+      margin: 0 2px 12px;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 650;
+      letter-spacing: 0.06em;
+    }
+    .pola-empty {
+      width: 100%;
+      min-height: 112px;
+      display: grid;
+      place-items: center;
+      gap: 8px;
+      border-radius: 16px;
+      border: 1px dashed var(--line);
+      background: rgba(255,254,250,0.45);
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-weight: 500;
+    }
+    .pola-empty .plus {
+      width: 34px; height: 34px;
+      display: grid; place-items: center;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--line) 55%, transparent);
+      font-size: 1.15rem;
+      color: var(--ink);
+    }
+    .pola-stage {
+      display: flex;
+      gap: 14px;
+      overflow-x: auto;
+      padding: 10px 4px 18px;
+      scrollbar-width: none;
+    }
+    .pola-stage::-webkit-scrollbar { display: none; }
+    .pola {
+      flex: 0 0 auto;
+      width: 152px;
+      padding: 10px 10px 30px;
+      background: var(--pola);
+      border-radius: 3px;
+      box-shadow: 0 6px 20px rgba(42,42,42,.08);
+      transform: rotate(-1.4deg);
+      position: relative;
+    }
+    .pola:nth-child(even) { transform: rotate(1.6deg); }
+    .pola.is-cover {
+      box-shadow:
+        0 6px 20px rgba(42,42,42,.08),
+        0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent);
+    }
+    .pola img {
+      display: block;
+      width: 100%;
+      height: 132px;
+      object-fit: cover;
+      background: var(--line);
+    }
+    .pola .cap {
+      position: absolute;
+      left: 10px; right: 10px; bottom: 9px;
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 0.68rem;
+      font-weight: 600;
+    }
+    .pola-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      padding: 0 2px;
+    }
+    .ghost {
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--line) 55%, transparent);
+      color: var(--muted);
+      font-size: 0.74rem;
+      font-weight: 650;
+    }
+    .ghost.danger { color: #9a5b55; }
+    .ghost[disabled] { opacity: 0.4; }
+
+    .foot {
+      position: sticky;
+      bottom: calc(8px + var(--safe-b));
+      margin-top: 24px;
+      display: grid;
+      gap: 8px;
+    }
+    .seal {
+      min-height: 52px;
+      border-radius: 999px;
+      background: var(--ink);
+      color: #F7F5F0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      box-shadow: 0 10px 24px rgba(42,42,42,.12);
+    }
+    .seal:active { transform: translateY(1px); }
+    .tip {
+      margin: 0;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.72rem;
+      line-height: 1.5;
+    }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(22px + var(--safe-b));
+      z-index: 30;
+      width: min(340px, calc(100% - 28px));
+      transform: translateX(-50%) translateY(10px);
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(42,42,42,0.92);
+      color: #F7F5F0;
+      font-size: 0.84rem;
+      line-height: 1.45;
+      opacity: 0;
+      pointer-events: none;
+      transition: .22s ease;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .file-hidden {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      width: 1px;
+      height: 1px;
+      opacity: 0.01;
+      overflow: hidden;
+    }
+  </style>
+  <script src="heic2any.min.js"></script>
+<meta property="og:title" content="心情日历 今日" />
+<meta property="og:description" content="一个记录每日心情与照片的个人日历应用。" />
+<meta property="og:url" content="https://swift-hollow-fvt2.here.now/index.html" />
+<meta property="og:type" content="website" />
+<meta property="og:image" content="https://here.now/og/swift-hollow-fvt2.jpg" />
+<meta property="og:image:width" content="1280" />
+<meta property="og:image:height" content="720" />
+<meta name="twitter:image" content="https://here.now/og/swift-hollow-fvt2.jpg" />
+<meta name="twitter:card" content="summary_large_image" /></head>
+<body>
+  <div class="shell">
+    <header class="meta">
+      <div class="date-block">
+        <div class="dow" id="dow">星期日</div>
+        <div class="day" id="dayNum">—</div>
+        <div class="ym" id="ym">2026 · 9</div>
+        <input id="dateInput" type="date" aria-label="选择日期" />
+      </div>
+      <div id="weatherRow" class="wx-mini" role="listbox" aria-label="天气"></div>
+    </header>
+
+    <h1 class="ask">今天感觉怎么样？</h1>
+    <div id="moodRail" class="mood-rail" role="listbox" aria-label="心情"></div>
+
+    <section class="page" aria-label="今日絮语">
+      <h2 class="page-label">今日絮语</h2>
+      <textarea id="note" class="note" maxlength="4000" placeholder="写一点点就好"></textarea>
+    </section>
+
+    <section class="media" aria-label="照片">
+      <h2 class="media-title">照片</h2>
+      <div id="photosMount"></div>
+      <input id="fileInput" class="file-hidden" type="file" accept="image/*,image/jpeg,image/png,image/heic,image/heif,.jpg,.jpeg,.png,.heic,.heif,.webp" multiple />
+      <input id="cameraInput" class="file-hidden" type="file" accept="image/*" capture="environment" />
+    </section>
+
+    <div class="foot">
+      <button id="saveBtn" class="seal" type="button">封存今天</button>
+      <p class="tip">点封存 → 分享 →「存储到文件」→ iCloud → LumaInbox</p>
+    </div>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+
+<script>
+const WEATHER = [
+  { id: "sunny", label: "晴", color: "#E8C547" },
+  { id: "cloudy", label: "云", color: "#A8B4C0" },
+  { id: "rainy", label: "雨", color: "#8FA4B8" },
+  { id: "foggy", label: "雾", color: "#B0B6BE" },
+  { id: "snowy", label: "雪", color: "#C5CCD4" },
+  { id: "storm", label: "雷", color: "#6B7C8F" },
+];
+const MOODS = [
+  { id: "great", label: "超棒", color: "#E8C547" },
+  { id: "good", label: "不错", color: "#D4C07A" },
+  { id: "okay", label: "还行", color: "#B8A88A" },
+  { id: "calm", label: "平静", color: "#8FA896" },
+  { id: "low", label: "低落", color: "#7E93A8" },
+  { id: "awful", label: "糟糕", color: "#B87A72" },
+];
+const MAX_PHOTOS = 9;
+const MOOD_ICONS = {"great": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9Iui2heajkiI+CiAgPHBhdGggZmlsbD0iI0U4QzU0NyIgZD0iTTMyIDZjMy4yIDUuNSA4LjUgNy41IDE0LjUgNy4yIDQuNS0uMiA5IDMuNSA5LjIgOC4yLjIgNS0yLjggOC41LTUuNSAxMi4yIDMuOCAzLjIgNi4yIDggNC4yIDEyLjUtMiA0LjUtNy41IDUuOC0xMiA2LjUtMi4yIDUuMi03LjUgOS0xMyA3LjItNS4yLTEuNi04LjItNi41LTEwLjItMTEtNS4yLjItMTAuNS0zLjUtMTEtOS0uNS01LjUgMy41LTkuNSA3LjUtMTEuNUMxMy41IDIzIDExLjIgMTYgMTUuNSAxMS41IDE5LjUgNy4yIDI2LjUgOC4yIDMyIDZaIi8+CiAgPGNpcmNsZSBjeD0iMjQuMiIgY3k9IjI2LjUiIHI9IjIuNSIgZmlsbD0iIzJBMkEyQSIvPgogIDxjaXJjbGUgY3g9IjQwIiBjeT0iMjUuOCIgcj0iMi41IiBmaWxsPSIjMkEyQTJBIi8+CiAgPCEtLSBvcGVuIG1vdXRoIGZpbGwgLS0+CiAgPHBhdGggZmlsbD0iIzJBMkEyQSIgZD0iTTIwLjUgMzRjMi44IDEuNCA2LjIgMiAxMS41IDEuOCA1LS4yIDguOC0xLjIgMTEuNS0yLjUgMS40IDQtMS44IDExLjUtMTEuOCAxMi44QzIxLjggNDcuNSAxOC41IDM5LjUgMjAuNSAzNFoiLz4KPC9zdmc+Cg==", "good": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IuS4jemUmSI+CiAgPHBhdGggZmlsbD0iI0Q0QzA3QSIgZD0iTTEyIDMwYzAtMTEuNSA5LTE5IDIwLTE5czIwIDcuNSAyMCAxOS05IDIxLTIwIDIxUzEyIDQxLjUgMTIgMzBaIi8+CiAgPGNpcmNsZSBjeD0iMjMuNSIgY3k9IjI2LjUiIHI9IjIuMyIgZmlsbD0iIzJBMkEyQSIvPgogIDxjaXJjbGUgY3g9IjQwLjUiIGN5PSIyNiIgcj0iMi4zIiBmaWxsPSIjMkEyQTJBIi8+CiAgPCEtLSBmaWxsZWQgY2xvc2VkIHNtaWxlIChiYW5hbmEpIC0tPgogIDxwYXRoIGZpbGw9IiMyQTJBMkEiIGQ9Ik0yMi41IDM1LjVjNC41IDcuNSAxNC41IDcuNSAxOSAwLTEuMiAxLjUtMi44IDIuNi00LjggMy40LTMuMiAxLjMtNi44IDEuMy0xMCAwLTEuOC0uOC0zLjItMS45LTQuMi0zLjRaIi8+Cjwvc3ZnPgo=", "okay": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9Iui/mOihjCI+CiAgPHBhdGggZmlsbD0iI0I4QTg4QSIgZD0iTTEzIDE1aDM4YzUgMCA4IDMuNSA4IDguNXYyM2MwIDUtMyA4LjUtOCA4LjVIMTNjLTUgMC04LTMuNS04LTguNXYtMjNjMC01IDMtOC41IDgtOC41WiIvPgogIDxjaXJjbGUgY3g9IjIzLjUiIGN5PSIyOCIgcj0iMi4yIiBmaWxsPSIjMkEyQTJBIi8+CiAgPGNpcmNsZSBjeD0iNDAuNSIgY3k9IjI3LjUiIHI9IjIuMiIgZmlsbD0iIzJBMkEyQSIvPgogIDxwYXRoIGZpbGw9IiMyQTJBMkEiIGQ9Ik0yNiAzOGMzIDQuMiA5IDQuMiAxMiAwLTEgLjktMi4yIDEuNS0zLjYgMS45LTIuMi42LTQuNi42LTYuOCAwLTEuNC0uNC0yLjUtMS0zLjYtMS45WiIvPgo8L3N2Zz4K", "calm": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IuW5s+mdmSI+CiAgPHBhdGggZmlsbD0iIzhGQTg5NiIgZD0iTTggMzVjNy41LTE3IDIzLTI2IDM4LTIxLjUgNi41IDIgMTEgMTAuNSA2LjUgMTktNi41IDEyLjUtMjEuNSAyMS0zNi41IDE2LjVDOS41IDQ2LjUgNC41IDQwIDggMzVaIi8+CiAgPGNpcmNsZSBjeD0iMjUiIGN5PSIzMCIgcj0iMi4yIiBmaWxsPSIjMkEyQTJBIi8+CiAgPGNpcmNsZSBjeD0iNDEiIGN5PSIyOCIgcj0iMi4yIiBmaWxsPSIjMkEyQTJBIi8+CiAgPCEtLSBmaWxsZWQgZmxhdCBiYXIgLS0+CiAgPHJlY3QgeD0iMjMiIHk9IjM5IiB3aWR0aD0iMTgiIGhlaWdodD0iMy4yIiByeD0iMS42IiBmaWxsPSIjMkEyQTJBIi8+Cjwvc3ZnPgo=", "low": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IuS9juiQvSI+CiAgPHBhdGggZmlsbD0iIzdFOTNBOCIgZD0iTTMyIDZjMTMgMTUgMjIgMjYgMjIgMzcgMCAxMS05IDE3LTIyIDE3UzEwIDU0IDEwIDQzQzEwIDMyIDE5IDIxIDMyIDZaIi8+CiAgPGNpcmNsZSBjeD0iMjQuNSIgY3k9IjMzIiByPSIyLjMiIGZpbGw9IiMyQTJBMkEiLz4KICA8Y2lyY2xlIGN4PSIzOS41IiBjeT0iMzMuNSIgcj0iMi4zIiBmaWxsPSIjMkEyQTJBIi8+CiAgPCEtLSBmaWxsZWQgZnJvd24gYmFuYW5hIChpbnZlcnRlZCkgLS0+CiAgPHBhdGggZmlsbD0iIzJBMkEyQSIgZD0iTTIyIDQ3YzQuNS03LjUgMTUuNS03LjUgMjAgMC0xLjItMS41LTIuOC0yLjYtNC44LTMuNC0zLjItMS4zLTcuMi0xLjMtMTAuNCAwLTEuOC44LTMuMiAxLjktNC44IDMuNFoiLz4KPC9zdmc+Cg==", "awful": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9Iuezn+ezlSI+CiAgPHBhdGggZmlsbD0iI0I4N0E3MiIgZD0iTTIwIDEwbDIwIDMuNSAxMiAxNS0zLjUgMTkuNS0xNy41IDkuNS0yMC01LjUtOC41LTE3LjUgMy41LTE3LjVaIi8+CiAgPHBhdGggZmlsbD0iIzJBMkEyQSIgZD0iTTE3IDI1LjJsMTIgNC41LTEuNiAzLjYtMTItNC41eiIvPgogIDxwYXRoIGZpbGw9IiMyQTJBMkEiIGQ9Ik00NyAyNC41bC0xMiA0LjggMS43IDMuNSAxMi00Ljh6Ii8+CiAgPGNpcmNsZSBjeD0iMjQiIGN5PSIzNCIgcj0iMi4yIiBmaWxsPSIjMkEyQTJBIi8+CiAgPGNpcmNsZSBjeD0iNDAiIGN5PSIzNCIgcj0iMi4yIiBmaWxsPSIjMkEyQTJBIi8+CiAgPHBhdGggZmlsbD0iIzJBMkEyQSIgZD0iTTIwLjUgNDguNWM1LTguNSAxOC04LjUgMjMgMC0xLjQtMS43LTMuMi0zLTUuNS0zLjgtMy44LTEuNC04LjItMS40LTEyIDAtMi4yLjgtNCAyLjEtNS41IDMuOFoiLz4KPC9zdmc+Cg=="};
+const WEATHER_ICONS = {"sunny": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IuaZtCI+CiAgPGNpcmNsZSBjeD0iMzIiIGN5PSIzMiIgcj0iMTEiIGZpbGw9IiNFOEM1NDciLz4KICA8IS0tIHNvZnQgaGFuZC1kcmF3biByYXlzIC0tPgogIDxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0U4QzU0NyIgc3Ryb2tlLXdpZHRoPSIyLjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+CiAgICA8cGF0aCBkPSJNMzIgOHY1LjUiLz48cGF0aCBkPSJNMzIgNTAuNVY1NiIvPgogICAgPHBhdGggZD0iTTggMzJoNS41Ii8+PHBhdGggZD0iTTUwLjUgMzJINTYiLz4KICAgIDxwYXRoIGQ9Ik0xNC41IDE0LjVsNCA0Ii8+PHBhdGggZD0iTTQ1LjUgNDUuNWw0IDQiLz4KICAgIDxwYXRoIGQ9Ik00OS41IDE0LjVsLTQgNCIvPjxwYXRoIGQ9Ik0xOC41IDQ1LjVsLTQgNCIvPgogIDwvZz4KPC9zdmc+Cg==", "cloudy": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IuWkmuS6kSI+CiAgPHBhdGggZmlsbD0iI0Q0RDhERSIgZD0iTTQwIDIyYzEuMi01LjItMi4yLTEwLjQtNy44LTExLjItNC4yLS42LTguMiAxLjYtOS44IDUuNC0xLjQtLjYtMy0uOC00LjYtLjQtNC4yIDEtNi44IDUuMi01LjggOS40SDQwYzQuNiAwIDggMy4yIDggNy4yIDAgMy44LTMuMiA2LjgtNy4yIDYuOEgxOC41Yy01LjIgMC05LjUtNC05LjUtOSAwLTQuMiAyLjgtNy44IDYuOC04LjhaIi8+CiAgPHBhdGggZmlsbD0iI0I4QzBDQSIgZD0iTTQ2IDM0Yy44LTMuNC0xLjQtNi44LTUtNy40LTIuOC0uNC01LjQgMS02LjQgMy42LS44LS40LTEuOC0uNi0yLjgtLjQtMi42LjYtNC4yIDMuMi0zLjYgNS44aDE4LjJjMi44IDAgNSAyIDUgNC40cy0yIDQuMi00LjQgNC4ySDI4Yy0zLjIgMC01LjgtMi40LTUuOC01LjQgMC0yLjYgMS44LTQuOCA0LjItNS40Ii8+Cjwvc3ZnPgo=", "rainy": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IumbqCI+CiAgPHBhdGggZmlsbD0iIzlBQURDMCIgZD0iTTM4IDE4YzEtNC40LTEuOC04LjgtNi42LTkuNi0zLjYtLjYtNyAxLjItOC40IDQuNC0xLjItLjQtMi40LS42LTMuOC0uMi0zLjQuOC01LjYgNC4yLTQuOCA3LjZIMzhjMy44IDAgNi42IDIuNiA2LjYgNS44IDAgMy0yLjYgNS40LTUuOCA1LjRIMTYuNWMtNC4yIDAtNy42LTMuMi03LjYtNy4yIDAtMy40IDIuMi02LjIgNS40LTciLz4KICA8ZyBmaWxsPSJub25lIiBzdHJva2U9IiM3QTk0QUMiIHN0cm9rZS13aWR0aD0iMi40IiBzdHJva2UtbGluZWNhcD0icm91bmQiPgogICAgPHBhdGggZD0iTTIyIDQwbC0yIDgiLz48cGF0aCBkPSJNMzIgMzlsLTIgOSIvPjxwYXRoIGQ9Ik00MiA0MGwtMiA4Ii8+CiAgPC9nPgo8L3N2Zz4K", "foggy": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IumbviI+CiAgPGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjQjBCOEMwIiBzdHJva2Utd2lkdGg9IjIuNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj4KICAgIDxwYXRoIGQ9Ik0xNCAyNGgzMiIvPjxwYXRoIGQ9Ik0xOCAzMmgyOCIvPjxwYXRoIGQ9Ik0xMiA0MGgzNCIvPjxwYXRoIGQ9Ik0yMCA0OGgyNCIvPgogIDwvZz4KPC9zdmc+Cg==", "snowy": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IumbqiI+CiAgPHBhdGggZmlsbD0iI0M1RDBEQyIgZD0iTTM4IDE4YzEtNC40LTEuOC04LjgtNi42LTkuNi0zLjYtLjYtNyAxLjItOC40IDQuNC0xLjItLjQtMi40LS42LTMuOC0uMi0zLjQuOC01LjYgNC4yLTQuOCA3LjZIMzhjMy44IDAgNi42IDIuNiA2LjYgNS44IDAgMy0yLjYgNS40LTUuOCA1LjRIMTYuNWMtNC4yIDAtNy42LTMuMi03LjYtNy4yIDAtMy40IDIuMi02LjIgNS40LTciLz4KICA8ZyBmaWxsPSIjQThCOEM4Ij4KICAgIDxjaXJjbGUgY3g9IjIyIiBjeT0iNDQiIHI9IjIiLz48Y2lyY2xlIGN4PSIzMiIgY3k9IjQ4IiByPSIyIi8+PGNpcmNsZSBjeD0iNDIiIGN5PSI0MyIgcj0iMiIvPgogICAgPGNpcmNsZSBjeD0iMjciIGN5PSI1MiIgcj0iMS41Ii8+PGNpcmNsZSBjeD0iMzciIGN5PSI1MSIgcj0iMS41Ii8+CiAgPC9nPgo8L3N2Zz4K", "storm": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9Iumbt+aatCI+CiAgPHBhdGggZmlsbD0iIzdBOEE5QSIgZD0iTTM4IDE2YzEtNC40LTEuOC04LjgtNi42LTkuNi0zLjYtLjYtNyAxLjItOC40IDQuNC0xLjItLjQtMi40LS42LTMuOC0uMi0zLjQuOC01LjYgNC4yLTQuOCA3LjZIMzhjMy44IDAgNi42IDIuNiA2LjYgNS44IDAgMy0yLjYgNS40LTUuOCA1LjRIMTYuNWMtNC4yIDAtNy42LTMuMi03LjYtNy4yIDAtMy40IDIuMi02LjIgNS40LTciLz4KICA8cGF0aCBmaWxsPSIjRThDNTQ3IiBkPSJNMzQgMzRsLTggMTBoNmwtNCAxMiAxMi0xNGgtNmw0LTh6Ii8+Cjwvc3ZnPgo="};
+
+const WEEKDAYS = ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"];
+const state = { dateKey:"", datePinned:false, weather:"", mood:"", note:"", photos:[], coverId:null, viewingId:null };
+const els = {
+  dateInput: document.getElementById("dateInput"),
+  dow: document.getElementById("dow"),
+  dayNum: document.getElementById("dayNum"),
+  ym: document.getElementById("ym"),
+  moodRail: document.getElementById("moodRail"),
+  weatherRow: document.getElementById("weatherRow"),
+  note: document.getElementById("note"),
+  photosMount: document.getElementById("photosMount"),
+  fileInput: document.getElementById("fileInput"),
+  cameraInput: document.getElementById("cameraInput"),
+  saveBtn: document.getElementById("saveBtn"),
+  toast: document.getElementById("toast"),
+};
+function pad(n){return String(n).padStart(2,"0")}
+function toKey(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+function todayKey(){
+  // Prefer Asia/Shanghai calendar day (Ke's zone); en-CA → YYYY-MM-DD
+  try {
+    return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Shanghai",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+  } catch (e) {
+    return toKey(new Date());
+  }
+}
+function parseKey(k){const [y,m,d]=String(k).split("-").map(Number);return new Date(y,m-1,d,12)}
+function applyAccent(){
+  const m = MOODS.find(x=>x.id===state.mood);
+  const w = WEATHER.find(x=>x.id===state.weather);
+  document.documentElement.style.setProperty("--accent", (m||w||{color:"#C5CCD4"}).color);
+}
+function renderMood(){
+  els.moodRail.innerHTML = MOODS.map(item=>{
+    const on = state.mood===item.id;
+    return `<button type="button" class="mood-stamp${on?" is-on":""}" role="option" aria-selected="${on}" data-id="${item.id}" style="--tone:${item.color}">
+      <span class="mood-face" aria-hidden="true"><img class="stamp-img" alt="" src="${MOOD_ICONS[item.id]}" /></span>
+      <span class="lbl">${item.label}</span>
+    </button>`;
+  }).join("");
+}
+function renderWeather(){
+  els.weatherRow.innerHTML = WEATHER.map(item=>{
+    const on = state.weather===item.id;
+    return `<button type="button" class="wx${on?" is-on":""}" role="option" aria-label="${item.label}" aria-selected="${on}" data-id="${item.id}" style="--tone:${item.color}">
+      <img class="wx-img" alt="" src="${WEATHER_ICONS[item.id]}" />
+    </button>`;
+  }).join("");
+}
+function currentPhoto(){
+  if(!state.photos.length) return null;
+  return state.photos.find(p=>p.id===state.viewingId) || state.photos.find(p=>p.id===state.coverId) || state.photos[0];
+}
+function renderPhotos(){
+  const mount = els.photosMount;
+  if(!state.photos.length){
+    mount.innerHTML = `<div class="pola-empty" style="grid-auto-flow:column;grid-auto-columns:1fr;width:100%">
+      <label for="fileInput" style="display:grid;place-items:center;gap:8px;padding:16px;cursor:pointer"><span class="plus">＋</span><span>从相册</span></label>
+      <label for="cameraInput" style="display:grid;place-items:center;gap:8px;padding:16px;cursor:pointer;border-left:1px dashed var(--line)"><span class="plus">📷</span><span>拍照</span></label>
+    </div>`;
+    return;
+  }
+  if(!state.coverId) state.coverId = state.photos[0].id;
+  const viewing = currentPhoto();
+  state.viewingId = viewing.id;
+  const atLimit = state.photos.length >= MAX_PHOTOS;
+  const cards = state.photos.map((p,i)=>{
+    const cover = p.id===state.coverId;
+    return `<button type="button" class="pola${cover?" is-cover":""}" data-id="${p.id}">
+      <img alt="" src="${p.dataUrl}" />
+      <span class="cap"><span>${cover?"封面":"第"+(i+1)+"张"}</span><span>${i+1}/${state.photos.length}</span></span>
+    </button>`;
+  }).join("");
+  mount.innerHTML = `<div class="pola-stage">${cards}</div>
+    <div class="pola-actions">
+      <button type="button" class="ghost" id="setCoverBtn"${viewing.id===state.coverId?" disabled":""}>设为封面</button>
+      <button type="button" class="ghost danger" id="removeBtn">拿掉</button>
+      <button type="button" class="ghost" id="addMoreBtn"${atLimit?" disabled":""}>再贴一张</button>
+      <span class="ghost" style="background:transparent">${state.photos.length}/${MAX_PHOTOS}</span>
+    </div>`;
+  mount.querySelectorAll(".pola").forEach(btn=>{
+    btn.onclick=()=>{ state.viewingId=btn.dataset.id; renderPhotos(); };
+  });
+  mount.querySelector("#setCoverBtn").onclick=()=>{ state.coverId=viewing.id; renderPhotos(); };
+  mount.querySelector("#removeBtn").onclick=()=>{
+    state.photos=state.photos.filter(p=>p.id!==viewing.id);
+    if(state.coverId===viewing.id) state.coverId=state.photos[0]?.id||null;
+    state.viewingId=state.coverId; renderPhotos();
+  };
+  mount.querySelector("#addMoreBtn").onclick=()=>{ if(!atLimit) els.fileInput.click(); else toast("最多 9 张"); };
+}
+function toast(t){ els.toast.textContent=t; els.toast.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(()=>els.toast.classList.remove("show"),3200); }
+function isHeicLike(file){
+  const t = (file.type || "").toLowerCase();
+  const n = (file.name || "").toLowerCase();
+  return t === "image/heic" || t === "image/heif" || /\.heic$/i.test(n) || /\.heif$/i.test(n);
+}
+function blobToDataUrl(blob){
+  return new Promise((res,rej)=>{
+    const r = new FileReader();
+    r.onload = () => res(String(r.result || ""));
+    r.onerror = () => rej(r.error || new Error("read"));
+    r.readAsDataURL(blob);
+  });
+}
+async function fileToJpegBlob(file){
+  if (isHeicLike(file)) {
+    if (typeof heic2any !== "function") throw new Error("heic2any missing");
+    const out = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.92 });
+    const blob = Array.isArray(out) ? out[0] : out;
+    if (!blob) throw new Error("heic empty");
+    return blob;
+  }
+  return file;
+}
+async function blobToResizedDataUrl(blob, maxEdge=1600, q=0.86){
+  let bmp = null;
+  try {
+    if (window.createImageBitmap) {
+      bmp = await createImageBitmap(blob);
+    }
+  } catch (_) {}
+  if (bmp) {
+    try {
+      const w = bmp.width, h = bmp.height;
+      if (!w || !h) throw new Error("empty");
+      const scale = Math.min(1, maxEdge / Math.max(w, h));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(w * scale));
+      canvas.height = Math.max(1, Math.round(h * scale));
+      canvas.getContext("2d").drawImage(bmp, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL("image/jpeg", q);
+    } finally {
+      if (bmp.close) try { bmp.close(); } catch(_){}
+    }
+  }
+  const url = URL.createObjectURL(blob);
+  try {
+    const img = await new Promise((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = () => reject(new Error("decode"));
+      i.src = url;
+    });
+    const w = img.naturalWidth || img.width;
+    const h = img.naturalHeight || img.height;
+    if (!w || !h) throw new Error("empty");
+    const scale = Math.min(1, maxEdge / Math.max(w, h));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(w * scale));
+    canvas.height = Math.max(1, Math.round(h * scale));
+    canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", q);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+async function addFiles(list){
+  const files = [...list].filter((f) => {
+    const t = (f.type || "").toLowerCase();
+    const n = (f.name || "").toLowerCase();
+    return t.startsWith("image/") || /\.(jpe?g|png|gif|webp|heic|heif)$/i.test(n) || !t;
+  });
+  if (!files.length) {
+    toast("没读到图片，换一张试试");
+    return;
+  }
+  toast("正在处理照片…");
+  let added = 0;
+  let lastErr = null;
+  for (const file of files) {
+    if (state.photos.length >= MAX_PHOTOS) {
+      toast("最多 9 张");
+      break;
+    }
+    try {
+      const jpegBlob = await fileToJpegBlob(file);
+      const dataUrl = await blobToResizedDataUrl(jpegBlob);
+      if (!dataUrl || !dataUrl.startsWith("data:image/")) throw new Error("bad");
+      const id = "photo-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+      state.photos.push({
+        id,
+        name: "photo-" + (state.photos.length + 1) + ".jpg",
+        mime: "image/jpeg",
+        dataUrl,
+      });
+      if (!state.coverId) state.coverId = id;
+      state.viewingId = id;
+      added += 1;
+    } catch (err) {
+      lastErr = err;
+      console.warn("photo fail", file.name, file.type, err);
+    }
+  }
+  renderPhotos();
+  if (added) toast("已添加 " + added + " 张");
+  else if (lastErr) toast("这张加不上，请再试一次或换 JPG");
+  else toast("没读到图片，换一张试试");
+}
+function syncDate(){
+  const d=parseKey(state.dateKey);
+  els.dow.textContent=WEEKDAYS[d.getDay()];
+  els.dayNum.textContent=String(d.getDate());
+  els.ym.textContent=d.getFullYear()+" · "+(d.getMonth()+1);
+  els.dateInput.value=state.dateKey;
+}
+async function exportPayload(){
+  state.note=els.note.value.trim();
+  if(!state.weather&&!state.mood&&!state.note&&!state.photos.length){
+    toast("先选个心情，或写一点点");
+    return null;
+  }
+  const coverIndex=Math.max(0,state.photos.findIndex(p=>p.id===state.coverId));
+  return {
+    schema:"luma-lifelog-inbox-v1",
+    dateKey:state.dateKey,
+    weather:state.weather||"",
+    mood:state.mood||"",
+    note:state.note||"",
+    coverIndex:state.photos.length?coverIndex:0,
+    photos:state.photos.map((p,i)=>({name:p.name||("photo-"+(i+1)+".jpg"),mime:p.mime||"image/jpeg",dataBase64:p.dataUrl})),
+    exportedAt:Date.now()
+  };
+}
+async function save(){
+  const payload = await exportPayload();
+  if(!payload) return;
+  const name = "lifelog-"+state.dateKey+".json";
+  const text = JSON.stringify(payload, null, 2);
+  const blob = new Blob([text], { type: "application/json" });
+  const file = new File([blob], name, { type: "application/json" });
+  const hasPhotos = !!(payload.photos && payload.photos.length);
+
+  // iOS Safari: <a download> often does nothing — use system share → 存储到文件
+  // Do NOT fall back to share({ text }) — that creates a useless「文本」file on iOS.
+  try {
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: "Life Log "+state.dateKey });
+      if (hasPhotos) {
+        toast("文件可能较大；若 iCloud 已满，请存到「我的 iPhone」");
+      } else {
+        toast("选「存储到文件」→ iCloud → LumaInbox");
+      }
+      return;
+    }
+  } catch (err) {
+    if (err && err.name === "AbortError") return;
+    console.warn("share files failed", err);
+  }
+
+  // Desktop / fallback: real download + open blob tab
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => {
+    const opened = window.open(url, "_blank");
+    if (!opened) {
+      toast("长按下方按钮，用分享保存");
+      showManualSave(url, name);
+    } else if (hasPhotos) {
+      toast("文件可能较大；若 iCloud 已满，请存到「我的 iPhone」");
+    } else {
+      toast("若没弹出存储，用分享 → 存储到文件");
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }, 250);
+}
+function showManualSave(url, name){
+  let bar = document.getElementById("manualSave");
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.id = "manualSave";
+    bar.style.cssText = "position:fixed;left:12px;right:12px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:50;padding:12px;border-radius:14px;background:#2A2A2A;color:#F7F5F0;font-size:0.84rem;line-height:1.45;box-shadow:0 12px 28px rgba(0,0,0,.25)";
+    document.body.appendChild(bar);
+  }
+  bar.innerHTML = "点右边打开文件，再用分享存到 iCloud <a id='manualSaveLink' href='"+url+"' download='"+name+"' style='float:right;color:#E8C547;font-weight:700;margin-left:8px'>打开</a>";
+}
+function refreshDateIfNeeded(){
+  if(state.datePinned) return;
+  const next=todayKey();
+  if(state.dateKey!==next){
+    state.dateKey=next;
+    syncDate();
+  }
+}
+function boot(){
+  state.dateKey=todayKey();
+  syncDate(); renderMood(); renderWeather(); renderPhotos(); applyAccent();
+  els.moodRail.addEventListener("click",e=>{
+    const b=e.target.closest(".mood-stamp"); if(!b) return;
+    state.mood=state.mood===b.dataset.id?"":b.dataset.id;
+    renderMood(); applyAccent();
+  });
+  els.weatherRow.addEventListener("click",e=>{
+    const b=e.target.closest(".wx"); if(!b) return;
+    state.weather=state.weather===b.dataset.id?"":b.dataset.id;
+    renderWeather(); applyAccent();
+  });
+  els.dateInput.addEventListener("change",()=>{
+    const v=els.dateInput.value||todayKey();
+    state.dateKey=v;
+    state.datePinned = v !== todayKey();
+    syncDate();
+  });
+  els.note.addEventListener("input",()=>{state.note=els.note.value});
+  els.fileInput.addEventListener("change",async()=>{const files=Array.from(els.fileInput.files||[]); els.fileInput.value=""; if(files.length) await addFiles(files); else toast("没有选到文件");});
+  els.cameraInput.addEventListener("change",async()=>{const files=Array.from(els.cameraInput.files||[]); els.cameraInput.value=""; if(files.length) await addFiles(files); else toast("没有选到文件");});
+  els.saveBtn.addEventListener("click",()=>{ refreshDateIfNeeded(); save(); });
+  document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") refreshDateIfNeeded(); });
+  window.addEventListener("pageshow", refreshDateIfNeeded);
+  window.addEventListener("focus", refreshDateIfNeeded);
+}
+boot();
+</script>
+</body>
+</html>
