@@ -51,12 +51,12 @@
     }
 
     .meta {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 10px 12px;
-      margin-bottom: 6px;
+      display: grid;
+      grid-template-columns: minmax(88px, 108px) 1fr;
+      align-items: end;
+      gap: 14px 18px;
+      margin-bottom: 14px;
+      padding: 2px 0 0;
     }
     .date-block { position: relative; }
     .date-block input[type="date"] {
@@ -83,18 +83,18 @@
       font-weight: 500;
     }
 
-    /* Weather gets the same visual weight as mood, while keeping the date compact. */
+    /* Compact weather cluster balances the date instead of floating as a full-width strip. */
     .wx-mini {
-      flex: 1 0 100%;
+      justify-self: end;
       display: grid;
-      grid-template-columns: repeat(6, minmax(44px, 1fr));
-      gap: 4px;
-      width: 100%;
-      max-width: none;
-      padding: 2px 0 0;
+      grid-template-columns: repeat(3, 44px);
+      gap: 6px 8px;
+      width: max-content;
+      max-width: 100%;
+      padding: 0;
     }
     .wx {
-      width: 100%;
+      width: 44px;
       min-width: 44px;
       height: 44px;
       display: grid;
@@ -113,7 +113,7 @@
     }
 
     .ask {
-      margin: 12px 2px 8px;
+      margin: 6px 2px 8px;
       font-family: "Noto Serif SC", serif;
       font-size: 1rem;
       font-weight: 600;
@@ -190,7 +190,9 @@
 
     @media (max-width: 340px) {
       .shell { padding-left: 12px; padding-right: 12px; }
-      .wx-mini { gap: 2px; }
+      .meta { grid-template-columns: 82px 1fr; gap: 12px; }
+      .wx-mini { grid-template-columns: repeat(3, 42px); gap: 4px 6px; }
+      .wx { width: 42px; min-width: 42px; height: 42px; }
       .mood-rail { gap: 2px; }
       .mood-stamp .lbl { font-size: 0.62rem; }
     }
@@ -204,14 +206,14 @@
 
 
     .page {
-      margin-top: 8px;
-      padding: 16px 14px 14px;
+      margin-top: 6px;
+      padding: 14px 14px 12px;
       border-radius: 18px;
       background: rgba(255,254,250,0.72);
       border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
     }
     .page-label {
-      margin: 0 0 10px;
+      margin: 0 0 8px;
       color: var(--muted);
       font-size: 0.75rem;
       font-weight: 650;
@@ -219,12 +221,15 @@
     }
     .note {
       width: 100%;
-      min-height: 120px;
+      height: 86px;
+      min-height: 86px;
+      max-height: 180px;
       margin: 0;
       padding: 0;
       border: 0;
       background: transparent;
       resize: none;
+      overflow-y: auto;
       font-size: 1rem;
       line-height: 1.7;
       caret-color: color-mix(in srgb, var(--accent) 65%, #2A2A2A);
@@ -232,7 +237,7 @@
     .note:focus { outline: none; }
     .note::placeholder { color: color-mix(in srgb, var(--muted) 70%, transparent); }
 
-    .media { margin-top: 22px; }
+    .media { margin-top: 18px; }
     .media-title {
       margin: 0 2px 12px;
       color: var(--muted);
@@ -320,13 +325,10 @@
     .ghost[disabled] { opacity: 0.4; }
 
     .foot {
-      position: sticky;
-      bottom: calc(8px + var(--safe-b));
-      margin-top: 24px;
-      display: grid;
-      gap: 8px;
+      margin-top: 20px;
     }
     .seal {
+      width: 100%;
       min-height: 52px;
       border-radius: 999px;
       background: var(--ink);
@@ -337,13 +339,6 @@
       box-shadow: 0 10px 24px rgba(42,42,42,.12);
     }
     .seal:active { transform: translateY(1px); }
-    .tip {
-      margin: 0;
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.72rem;
-      line-height: 1.5;
-    }
     .toast {
       position: fixed;
       left: 50%;
@@ -403,7 +398,6 @@
 
     <div class="foot">
       <button id="saveBtn" class="seal" type="button">封存今天</button>
-      <p class="tip">点封存 → 分享 →「存储到文件」→ iCloud → LumaInbox</p>
     </div>
   </div>
   <div id="toast" class="toast" role="status"></div>
@@ -521,6 +515,12 @@ function renderPhotos(){
   mount.querySelector("#addMoreBtn").onclick=()=>{ if(!atLimit) els.fileInput.click(); else toast("最多 9 张"); };
 }
 function toast(t){ els.toast.textContent=t; els.toast.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(()=>els.toast.classList.remove("show"),3200); }
+function resizeNote(){
+  els.note.style.height = "86px";
+  const next = Math.min(180, Math.max(86, els.note.scrollHeight));
+  els.note.style.height = next + "px";
+  els.note.style.overflowY = els.note.scrollHeight > 180 ? "auto" : "hidden";
+}
 function isHeicLike(file){
   const t = (file.type || "").toLowerCase();
   const n = (file.name || "").toLowerCase();
@@ -721,7 +721,7 @@ function refreshDateIfNeeded(){
 }
 function boot(){
   state.dateKey=todayKey();
-  syncDate(); renderMood(); renderWeather(); renderPhotos(); applyAccent();
+  syncDate(); renderMood(); renderWeather(); renderPhotos(); applyAccent(); resizeNote();
   els.moodRail.addEventListener("click",e=>{
     const b=e.target.closest(".mood-stamp"); if(!b) return;
     state.mood=state.mood===b.dataset.id?"":b.dataset.id;
@@ -738,7 +738,7 @@ function boot(){
     state.datePinned = v !== todayKey();
     syncDate();
   });
-  els.note.addEventListener("input",()=>{state.note=els.note.value});
+  els.note.addEventListener("input",()=>{ state.note=els.note.value; resizeNote(); });
   els.fileInput.addEventListener("change",async()=>{const files=Array.from(els.fileInput.files||[]); els.fileInput.value=""; if(files.length) await addFiles(files); else toast("没有选到文件");});
   els.cameraInput.addEventListener("change",async()=>{const files=Array.from(els.cameraInput.files||[]); els.cameraInput.value=""; if(files.length) await addFiles(files); else toast("没有选到文件");});
   els.saveBtn.addEventListener("click",()=>{ refreshDateIfNeeded(); save(); });
