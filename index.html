@@ -649,6 +649,194 @@
       .stamp-img { width: 29px; height: 29px; }
     }
 
+
+    /* iPhone SE 2/3: 375×667 CSS viewport. Keep the full empty-state page visible at once. */
+    @media (max-width: 390px) and (max-height: 700px) {
+      .shell {
+        padding: calc(6px + var(--safe-t)) 12px calc(8px + var(--safe-b));
+      }
+
+      .meta {
+        grid-template-columns: 96px minmax(0, 1fr);
+        grid-template-rows: 104px;
+        gap: 8px;
+        min-height: 104px;
+        margin-bottom: 10px;
+      }
+      .date-block {
+        grid-column: 1;
+        grid-row: 1;
+        padding: 18px 12px 10px;
+      }
+      .date-block::before {
+        width: 50px;
+        height: 14px;
+        left: 22px;
+        top: -3px;
+        background-size: 8px 8px, 8px 8px, auto;
+      }
+      .day { font-size: 2.75rem; }
+      .ym { margin-top: 5px; font-size: .72rem; }
+      .dow { margin-top: 2px; font-size: .66rem; }
+      .date-leaf {
+        right: 7px;
+        bottom: 7px;
+        width: 22px;
+        height: 44px;
+        transform: rotate(14deg) scale(.8);
+        transform-origin: bottom right;
+      }
+      .header-note,
+      .flower-sprig { display: none; }
+
+      .weather-paper {
+        grid-column: 2;
+        grid-row: 1;
+        padding: 7px 5px 5px;
+      }
+      .wx-mini { gap: 0; }
+      .wx {
+        min-height: 64px;
+        padding: 3px 0 1px;
+        gap: 3px;
+        border-radius: 10px;
+      }
+      .wx-icon { width: 29px; height: 29px; border-radius: 9px; }
+      .wx-img { width: 20px; height: 20px; }
+      .wx-label { font-size: .52rem; }
+
+      .mood-wrap {
+        margin-bottom: 10px;
+        padding: 30px 6px 7px;
+      }
+      .ask {
+        left: 10px;
+        top: -2px;
+        padding: 5px 11px 4px;
+        font-size: .88rem;
+      }
+      .mood-rail { gap: 0; }
+      .mood-stamp {
+        min-height: 49px;
+        padding: 3px 0 2px;
+        gap: 3px;
+      }
+      .mood-face { width: 30px; height: 30px; border-radius: 11px; }
+      .stamp-img { width: 26px; height: 26px; }
+      .mood-stamp .lbl { font-size: .61rem; }
+
+      .page {
+        margin-bottom: 10px;
+        padding: 36px 10px 8px 24px;
+        border-radius: 16px;
+      }
+      .page::before {
+        left: 6px;
+        top: 13px;
+        bottom: 13px;
+        width: 10px;
+        background-size: 10px 27px;
+      }
+      .page-label {
+        left: 20px;
+        top: 4px;
+        padding: 5px 11px 4px;
+        font-size: .88rem;
+      }
+      .note-heart {
+        top: 8px;
+        right: 14px;
+        font-size: 1.1rem;
+      }
+      .note {
+        height: 58px;
+        min-height: 58px;
+        max-height: 105px;
+        padding: 11px 34px 15px 34px;
+        border-radius: 14px;
+        font-size: .88rem;
+        line-height: 1.5;
+      }
+      .note-pencil {
+        left: 12px;
+        top: 13px;
+        width: 11px;
+        height: 11px;
+      }
+      .note-count {
+        right: 11px;
+        bottom: 7px;
+        font-size: .58rem;
+      }
+
+      .media {
+        padding: 34px 7px 8px;
+      }
+      .media-title {
+        top: 3px;
+        left: 9px;
+        padding: 5px 11px 4px;
+        font-size: .88rem;
+      }
+      .photo-empty {
+        gap: 8px;
+        padding: 0 2px 3px;
+      }
+      .photo-choice {
+        min-height: 78px;
+        border-radius: 12px;
+        gap: 4px;
+        font-size: .67rem;
+      }
+      .photo-choice .plus { font-size: 1.55rem; }
+      .photo-choice.camera .plus {
+        width: 27px;
+        height: 20px;
+      }
+      .pola-stage {
+        gap: 8px;
+        padding: 2px 3px 7px;
+      }
+      .pola {
+        flex-basis: 100px;
+        padding: 6px 6px 22px;
+      }
+      .pola::before {
+        width: 42px;
+        height: 12px;
+        left: 29px;
+        top: -6px;
+      }
+      .pola img { height: 70px; }
+      .pola .cap {
+        left: 6px;
+        right: 6px;
+        bottom: 5px;
+        font-size: .56rem;
+      }
+      .pola-actions {
+        gap: 5px;
+        padding: 1px 2px 0;
+      }
+      .ghost {
+        min-height: 27px;
+        padding: 5px 8px;
+        font-size: .62rem;
+      }
+
+      .soft-note { display: none; }
+      .foot {
+        margin-top: 6px;
+        padding: 11px 2px 6px;
+      }
+      .foot::before { inset: 3px -4px 0; }
+      .seal {
+        min-height: 50px;
+        font-size: .96rem;
+      }
+      .seal::after { margin-left: 13px; font-size: .78rem; }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .wx,.mood-stamp,.mood-face,.toast { transition: none !important; }
     }
@@ -828,11 +1016,17 @@ function toast(t){ els.toast.textContent=t; els.toast.classList.add("show"); cle
 function updateNoteCount(){
   if (els.noteCount) els.noteCount.textContent = String(els.note.value.length) + "/" + String(els.note.maxLength || 4000);
 }
+function compactSeMode(){
+  return !!(window.matchMedia && window.matchMedia("(max-width: 390px) and (max-height: 700px)").matches);
+}
 function resizeNote(){
-  els.note.style.height = "86px";
-  const next = Math.min(170, Math.max(86, els.note.scrollHeight));
+  const compact = compactSeMode();
+  const base = compact ? 58 : 86;
+  const cap = compact ? 105 : 170;
+  els.note.style.height = base + "px";
+  const next = Math.min(cap, Math.max(base, els.note.scrollHeight));
   els.note.style.height = next + "px";
-  els.note.style.overflowY = els.note.scrollHeight > 170 ? "auto" : "hidden";
+  els.note.style.overflowY = els.note.scrollHeight > cap ? "auto" : "hidden";
   updateNoteCount();
 }
 function isHeicLike(file){
@@ -1059,6 +1253,7 @@ function boot(){
   document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") refreshDateIfNeeded(); });
   window.addEventListener("pageshow", refreshDateIfNeeded);
   window.addEventListener("focus", refreshDateIfNeeded);
+  window.addEventListener("resize", resizeNote);
 }
 boot();
 </script>
