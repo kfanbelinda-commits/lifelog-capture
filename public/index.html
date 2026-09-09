@@ -778,8 +778,9 @@
         font-size: .58rem;
       }
 
+      /* Keep the three sections above intact; use the spare SE3 height for a richer photo/footer composition. */
       .media {
-        padding: 34px 7px 8px;
+        padding: 38px 8px 12px;
       }
       .media-title {
         top: 3px;
@@ -788,62 +789,92 @@
         font-size: .88rem;
       }
       .photo-empty {
-        gap: 8px;
-        padding: 0 2px 3px;
+        grid-template-columns: 1.08fr .92fr;
+        gap: 10px;
+        padding: 4px 4px 7px;
       }
       .photo-choice {
-        min-height: 78px;
-        border-radius: 12px;
-        gap: 4px;
-        font-size: .67rem;
+        position: relative;
+        min-height: 108px;
+        padding-top: 10px;
+        border: 1px solid #E6DED2;
+        border-radius: 3px;
+        background: rgba(255,254,250,.96);
+        box-shadow: 0 5px 12px rgba(67,54,42,.07);
+        gap: 6px;
+        font-size: .69rem;
+        transform: rotate(-1.2deg);
       }
-      .photo-choice .plus { font-size: 1.55rem; }
+      .photo-choice.camera { transform: rotate(1.1deg); }
+      .photo-choice::before {
+        content: "";
+        position: absolute;
+        width: 46px;
+        height: 12px;
+        left: 50%;
+        top: -7px;
+        transform: translateX(-50%) rotate(2deg);
+        background: rgba(237,189,188,.7);
+        border-radius: 1px;
+      }
+      .photo-choice.camera::before {
+        background: rgba(187,205,230,.72);
+        transform: translateX(-50%) rotate(-2deg);
+      }
+      .photo-choice .plus { font-size: 1.7rem; }
       .photo-choice.camera .plus {
-        width: 27px;
-        height: 20px;
+        width: 29px;
+        height: 22px;
       }
+
       .pola-stage {
-        gap: 8px;
-        padding: 2px 3px 7px;
+        gap: 9px;
+        padding: 4px 3px 9px;
       }
       .pola {
-        flex-basis: 100px;
-        padding: 6px 6px 22px;
+        flex-basis: 108px;
+        padding: 6px 6px 23px;
       }
       .pola::before {
-        width: 42px;
+        width: 44px;
         height: 12px;
-        left: 29px;
+        left: 32px;
         top: -6px;
       }
-      .pola img { height: 70px; }
+      .pola img { height: 82px; }
       .pola .cap {
         left: 6px;
         right: 6px;
         bottom: 5px;
-        font-size: .56rem;
+        font-size: .57rem;
       }
       .pola-actions {
         gap: 5px;
-        padding: 1px 2px 0;
+        padding: 2px 2px 0;
       }
       .ghost {
-        min-height: 27px;
+        min-height: 28px;
         padding: 5px 8px;
         font-size: .62rem;
       }
 
-      .soft-note { display: none; }
+      .soft-note {
+        display: block;
+        margin: 9px 0 -2px 18px;
+        font-size: .72rem;
+        line-height: 1.22;
+        opacity: .9;
+      }
       .foot {
-        margin-top: 6px;
-        padding: 11px 2px 6px;
+        margin-top: 2px;
+        padding: 13px 2px 7px;
       }
-      .foot::before { inset: 3px -4px 0; }
+      .foot::before { inset: 4px -4px 0; }
       .seal {
-        min-height: 50px;
-        font-size: .96rem;
+        min-height: 52px;
+        font-size: .98rem;
       }
-      .seal::after { margin-left: 13px; font-size: .78rem; }
+      .seal::after { margin-left: 14px; font-size: .8rem; }
     }
 
     @media (prefers-reduced-motion: reduce) {
